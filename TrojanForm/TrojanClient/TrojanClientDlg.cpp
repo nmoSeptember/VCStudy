@@ -1,11 +1,11 @@
 
-// TrojanServerDlg.cpp : implementation file
+// TrojanClientDlg.cpp : implementation file
 //
 
 #include "pch.h"
 #include "framework.h"
-#include "TrojanServer.h"
-#include "TrojanServerDlg.h"
+#include "TrojanClient.h"
+#include "TrojanClientDlg.h"
 #include "afxdialogex.h"
 #include <WS2tcpip.h>
 
@@ -47,32 +47,34 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 
-// CTrojanServerDlg dialog
+// CTrojanClientDlg dialog
 
 
 
-CTrojanServerDlg::CTrojanServerDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_TROJANSERVER_DIALOG, pParent)
+CTrojanClientDlg::CTrojanClientDlg(CWnd* pParent /*=nullptr*/)
+	: CDialogEx(IDD_TROJANCLIENT_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
-void CTrojanServerDlg::DoDataExchange(CDataExchange* pDX)
+void CTrojanClientDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
 
-BEGIN_MESSAGE_MAP(CTrojanServerDlg, CDialogEx)
+BEGIN_MESSAGE_MAP(CTrojanClientDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_MESSAGE(UM_SERVER, OnSock)
+	ON_MESSAGE(UM_CLIENT, OnSock)
+	ON_BN_CLICKED(IDC_BUTTON1, &CTrojanClientDlg::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_BUTTON2, &CTrojanClientDlg::OnBnClickedButton2)
 END_MESSAGE_MAP()
 
 
-// CTrojanServerDlg message handlers
+// CTrojanClientDlg message handlers
 
-BOOL CTrojanServerDlg::OnInitDialog()
+BOOL CTrojanClientDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
@@ -102,31 +104,11 @@ BOOL CTrojanServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
-	WSADATA wsaData;
-	int wsaSu = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (wsaSu) {
-		MessageBox(TEXT("WSAStart Launch Failed!ERROR:" + wsaSu));
-	}
-	m_ListenSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	WSAEventSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER | FD_READ | FD_CONNECT | FD_CLOSE);
-	//WSAAsyncSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER, FD_ACCEPT);
-
-	sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_addr.S_un.S_addr = ADDR_ANY;
-	addr.sin_port = htons(5555);
-
-	if (bind(m_ListenSock, (SOCKADDR*)& addr, sizeof(SOCKADDR))) {
-		MessageBox(TEXT("bind Failed!ERROR:"));
-	}
-	if (listen(m_ListenSock, 1)) {
-		MessageBox(TEXT("listen Failed!ERROR:"));
-	}
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
-void CTrojanServerDlg::OnSysCommand(UINT nID, LPARAM lParam)
+void CTrojanClientDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
 	{
@@ -143,7 +125,7 @@ void CTrojanServerDlg::OnSysCommand(UINT nID, LPARAM lParam)
 //  to draw the icon.  For MFC applications using the document/view model,
 //  this is automatically done for you by the framework.
 
-void CTrojanServerDlg::OnPaint()
+void CTrojanClientDlg::OnPaint()
 {
 	if (IsIconic())
 	{
@@ -170,70 +152,97 @@ void CTrojanServerDlg::OnPaint()
 
 // The system calls this function to obtain the cursor to display while the user drags
 //  the minimized window.
-HCURSOR CTrojanServerDlg::OnQueryDragIcon()
+HCURSOR CTrojanClientDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-LRESULT CTrojanServerDlg::OnSock(WPARAM wParam, LPARAM lParam)
+
+
+void CTrojanClientDlg::OnBnClickedButton1()
+{
+	// TODO: Add your control notification handler code here
+	char szBtnName[10] = { 0 };
+	GetDlgItemText(IDC_BUTTON1, (LPTSTR)szBtnName, 10);
+	if (!strcmp(szBtnName, "Disconn"))
+	{
+		SetDlgItemText(IDC_EDIT1, L"Conn");
+		GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
+		GetDlgItem(IDC_EDIT2)->EnableWindow(FALSE);
+		GetDlgItem(IDC_EDIT1)->EnableWindow(TRUE);
+		closesocket(m_Socket);
+		m_StrMsg = "Active disConnect";
+		InsertMsg();
+		return;
+	}
+
+	char szLpAddr[MAXBYTE] = { 0 };
+	struct in_addr sAdd;
+	GetDlgItemText(IDC_EDIT1, (LPTSTR)szLpAddr, MAXBYTE);
+	m_Socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	WSAEventSelect(m_Socket, GetSafeHwnd(), UM_CLIENT | FD_READ | FD_CONNECT | FD_CLOSE);
+	sockaddr_in serverAddr;
+	serverAddr.sin_family = AF_INET;
+	inet_pton(PF_INET, szLpAddr, &sAdd);
+	serverAddr.sin_addr.S_un.S_addr = sAdd.S_un.S_addr;
+	serverAddr.sin_port = htons(5555);
+	connect(m_Socket, (SOCKADDR*)& serverAddr, sizeof(SOCKADDR));
+}
+
+void CTrojanClientDlg::InsertMsg()
+{
+}
+
+LRESULT CTrojanClientDlg::OnSock(WPARAM wParm, LPARAM lParam)
 {
 	if (WSAGETSELECTERROR(lParam))
 	{
-		return -1;
+		return NULL;
 	}
-	switch (WSAGETSELECTERROR(lParam))
+	switch (WSAGETSELECTEVENT(lParam))
 	{
-	case FD_ACCEPT:
+	case FD_CONNECT:
 	{
-		sockaddr_in clientAddr;
-		int nSize = sizeof(SOCKADDR);
-		m_ClientSock = accept(m_ListenSock, (SOCKADDR*)& clientAddr, &nSize);
-		char strAddr[MAXBYTE];
-		inet_ntop(PF_INET, (SOCKADDR*)& clientAddr, strAddr, MAXBYTE);
-		m_StrMsg.Format(L"Request Address:%s:%d", strAddr, ntohs(clientAddr.sin_port));
-		DATA_MSG dataMsg;
-		dataMsg.bType = TEXTMSG;
-		dataMsg.bClass = 0;
-		CString value;
-		strcpy_s(dataMsg.szValue, HELPMSG);
-		send(m_ClientSock, dataMsg.szValue, sizeof(dataMsg) + sizeof(CHAR), 0);
+		GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
+		GetDlgItem(IDC_EDIT2)->EnableWindow(TRUE);
+		GetDlgItem(IDC_EDIT1)->EnableWindow(FALSE);
+
+		SetDlgItemText(IDC_BUTTON1, TEXT("Disconn"));
+		m_StrMsg = "Connect successful!";
 		break;
 	}
 	case FD_READ:
 	{
-		char szBuf[MAXBYTE] = { 0 };
-		recv(m_ClientSock, szBuf, MAXBYTE, 0);
-		DIspatchMsg(szBuf);
-		m_StrMsg = "Received:";
-		m_StrMsg += szBuf;
-		break;
-	}
-	case FD_CLOSE:
-	{
-		closesocket(m_ListenSock);
-		m_StrMsg = "Close connection.";
+		DATA_MSG dataMsg;
+		recv(m_Socket, (char*)& dataMsg, sizeof(DATA_MSG), 0);
+		DispatchMsg((char*)dataMsg.szValue);
 		break;
 	}
 	default:
 		break;
 	}
 	InsertMsg();
+	return LRESULT();
 }
 
-void CTrojanServerDlg::InsertMsg()
-{
-}
-
-VOID CTrojanServerDlg::DIspatchMsg(char* szBuf)
+VOID CTrojanClientDlg::DispatchMsg(char* msg)
 {
 	DATA_MSG dataMsg;
-	ZeroMemory((void*)& dataMsg, sizeof(DATA_MSG));
-	if (!strcmp(szBuf, "help"))
+	memcpy(&dataMsg, (const void*)msg, sizeof(DATA_MSG));
+	if (dataMsg.bType == TEXTMSG)
 	{
-		dataMsg.bType = TEXTMSG;
-		dataMsg.bClass = 0;
-		strcpy_s(dataMsg.szValue, HELPMSG);
+		m_StrMsg = dataMsg.szValue;
 	}
 	return VOID();
 }
 
+
+
+
+void CTrojanClientDlg::OnBnClickedButton2()
+{
+	// TODO: Add your control notification handler code here
+	char szBuf[MAXBYTE] = { 0 };
+	GetDlgItemText(IDC_EDIT3, (LPTSTR)szBuf, MAXBYTE);
+	send(m_Socket, szBuf, MAXBYTE, 0);
+}
