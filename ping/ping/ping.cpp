@@ -14,7 +14,7 @@ struct icmp_header
 	unsigned short icmp_checksum;
 	unsigned short icmp_id;
 	unsigned short icmp_sequence;
-	unsigned long icmp_timestamp;
+	//unsigned long icmp_timestamp;
 };
 
 #define ICMP_HEADER_SIZE sizeof(icmp_header)
@@ -27,7 +27,7 @@ unsigned short chsum(struct icmp_header* picmp, int len)
 	unsigned short* pusicmp = (unsigned short*)picmp;
 	while (len > 1)
 	{
-		sum += *(pusicmp);
+		sum += *(pusicmp++);
 		if (sum & 0x80000000)
 		{
 			sum = (sum & 0xffff) + (sum >> 16);
@@ -71,7 +71,7 @@ BOOL MyPing(char* szDestIP)
 	pIcmp->icmp_code = 0;
 	pIcmp->icmp_id = (USHORT)::GetCurrentProcessId();
 	pIcmp->icmp_sequence = 0;
-	pIcmp->icmp_timestamp = 0;
+	//pIcmp->icmp_timestamp = 0;
 	pIcmp->icmp_checksum = 0;
 
 	memcpy((szBuff + ICMP_HEADER_SIZE), "abcdefghijklmnopqrstuvwabcdefghi", 32);
@@ -85,7 +85,7 @@ BOOL MyPing(char* szDestIP)
 	recvfrom(s, szRecvBuff, MAXBYTE, 0, (SOCKADDR*)& from_addr, &nLen);
 
 	char sourceIp[MAXBYTE];
-	char* ptr = const_cast<char*>(inet_ntop(PF_INET, &from_addr, (PSTR)sourceIp, MAXBYTE));
+	char* ptr = const_cast<char*>(inet_ntop(PF_INET, &from_addr.sin_addr.S_un.S_addr, (PSTR)sourceIp, MAXBYTE));
 	if (lstrcmpA(sourceIp, szDestIP))
 	{
 		bRet = FALSE;
@@ -93,7 +93,7 @@ BOOL MyPing(char* szDestIP)
 	else
 	{
 		char addrBuff2[MAXBYTE];
-		inet_ntop(PF_INET, &from_addr, (PSTR)addrBuff2, MAXBYTE);
+		inet_ntop(PF_INET, &from_addr.sin_addr.S_un.S_addr, (PSTR)addrBuff2, MAXBYTE);
 		struct icmp_header* pIcmp1 = (icmp_header*)(szRecvBuff + 20);
 		std::cout << addrBuff2 << std::endl;
 	}
