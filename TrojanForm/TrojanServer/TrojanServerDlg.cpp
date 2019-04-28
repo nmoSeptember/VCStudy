@@ -109,14 +109,16 @@ BOOL CTrojanServerDlg::OnInitDialog()
 	}
 	m_ListenSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	//WSAEventSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER | FD_READ | FD_CONNECT | FD_CLOSE);
-	WSAAsyncSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER,FD_ACCEPT);
+	WSAAsyncSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER, FD_ACCEPT);
 
+	struct in_addr sAdd;
+	inet_pton(PF_INET, "127.0.0.1", &sAdd);
 	sockaddr_in addr;
 	addr.sin_family = PF_INET;
-	addr.sin_addr.S_un.S_addr = ADDR_ANY;
+	addr.sin_addr.S_un.S_addr = sAdd.S_un.S_addr;
 	addr.sin_port = htons(5555);
 
-	if (bind(m_ListenSock, (SOCKADDR*)& addr, sizeof(SOCKADDR))) {
+	if (bind(m_ListenSock, (SOCKADDR*)& addr, sizeof(addr))) {
 		MessageBox(TEXT("bind Failed!ERROR:"));
 	}
 	if (listen(m_ListenSock, 1)) {
@@ -183,45 +185,52 @@ LRESULT CTrojanServerDlg::OnSock(WPARAM wParam, LPARAM lParam)
 	}
 	switch (WSAGETSELECTERROR(lParam))
 	{
-		case FD_ACCEPT:
-		{
-			sockaddr_in clientAddr;
-			int nSize = sizeof(SOCKADDR);
-			m_ClientSock = accept(m_ListenSock, (SOCKADDR*)& clientAddr, &nSize);
-			char strAddr[MAXBYTE];
-			inet_ntop(PF_INET, (SOCKADDR*)& clientAddr, strAddr, MAXBYTE);
-			m_StrMsg.Format(L"Request Address:%s:%d", strAddr, ntohs(clientAddr.sin_port));
-			DATA_MSG dataMsg;
-			dataMsg.bType = TEXTMSG;
-			dataMsg.bClass = 0;
-			CString value;
-			strcpy_s(dataMsg.szValue, HELPMSG);
-			send(m_ClientSock, dataMsg.szValue, sizeof(dataMsg) + sizeof(CHAR), 0);
-			break;
-		}
-		case FD_READ:
-		{
-			char szBuf[MAXBYTE] = { 0 };
-			recv(m_ClientSock, szBuf, MAXBYTE, 0);
-			DIspatchMsg(szBuf);
-			m_StrMsg = "Received:";
-			m_StrMsg += szBuf;
-			break;
-		}
-		case FD_CLOSE:
-		{
-			closesocket(m_ListenSock);
-			m_StrMsg = "Close connection.";
-			break;
-		}
-		default:
-			break;
+	case FD_ACCEPT:
+	{
+		sockaddr_in clientAddr;
+		int nSize = sizeof(SOCKADDR);
+		m_ClientSock = accept(m_ListenSock, (SOCKADDR*)& clientAddr, &nSize);
+		char strAddr[MAXBYTE];
+		inet_ntop(PF_INET, (SOCKADDR*)& clientAddr, strAddr, MAXBYTE);
+		m_StrMsg.Format(L"Request Address:%s:%d", strAddr, ntohs(clientAddr.sin_port));
+		DATA_MSG dataMsg;
+		dataMsg.bType = TEXTMSG;
+		dataMsg.bClass = 0;
+		CString value;
+		strcpy_s(dataMsg.szValue, HELPMSG);
+		send(m_ClientSock, dataMsg.szValue, sizeof(dataMsg) + sizeof(CHAR), 0);
+		break;
+	}
+	case FD_READ:
+	{
+		char szBuf[MAXBYTE] = { 0 };
+		recv(m_ClientSock, szBuf, MAXBYTE, 0);
+		DIspatchMsg(szBuf);
+		m_StrMsg = "Received:";
+		m_StrMsg += szBuf;
+		break;
+	}
+	case FD_CLOSE:
+	{
+		closesocket(m_ListenSock);
+		m_StrMsg = "Close connection.";
+		break;
+	}
+	default:
+		break;
 	}
 	InsertMsg();
 }
 
 void CTrojanServerDlg::InsertMsg()
 {
+	CString strMsg;
+	GetDlgItemText(IDC_EDIT1, strMsg);
+	m_StrMsg += "\r\n";
+	m_StrMsg += "---------------------------------------------------\r\n";
+	m_StrMsg += strMsg;
+	SetDlgItemText(IDC_EDIT1, m_StrMsg);
+	m_StrMsg = "";
 }
 
 VOID CTrojanServerDlg::DIspatchMsg(char* szBuf)

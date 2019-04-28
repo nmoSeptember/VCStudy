@@ -161,6 +161,8 @@ HCURSOR CTrojanClientDlg::OnQueryDragIcon()
 
 void CTrojanClientDlg::OnBnClickedButton1()
 {
+	m_StrMsg = "OnBnClickedButton1";
+	InsertMsg();
 	// TODO: Add your control notification handler code here
 	char szBtnName[10] = { 0 };
 	GetDlgItemText(IDC_BUTTON1, (LPTSTR)szBtnName, 10);
@@ -191,6 +193,13 @@ void CTrojanClientDlg::OnBnClickedButton1()
 
 void CTrojanClientDlg::InsertMsg()
 {
+	CString strMsg;
+	GetDlgItemText(IDC_EDIT2, strMsg);
+	m_StrMsg += "\r\n";
+	m_StrMsg += "---------------------------------------------------\r\n";
+	m_StrMsg += strMsg;
+	SetDlgItemText(IDC_EDIT2, m_StrMsg);
+	m_StrMsg = "";
 }
 
 LRESULT CTrojanClientDlg::OnSock(WPARAM wParm, LPARAM lParam)
