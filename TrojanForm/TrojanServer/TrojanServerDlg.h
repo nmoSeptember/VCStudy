@@ -21,7 +21,7 @@ typedef struct _DATA_MSG
 	BYTE bType;
 	BYTE bClass;
 	char szValue[0x200];
-}DATA_MSG,*PDATA_MSG;
+}DATA_MSG, * PDATA_MSG;
 
 // CTrojanServerDlg dialog
 class CTrojanServerDlg : public CDialogEx
@@ -58,4 +58,5 @@ private:
 	SOCKET m_ListenSock;
 	SOCKET m_ClientSock;
 	CString m_StrMsg;
+	HANDLE m_hServerEvent;
 };

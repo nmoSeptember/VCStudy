@@ -180,13 +180,13 @@ void CTrojanClientDlg::OnBnClickedButton1()
 	struct in_addr sAdd;
 	GetDlgItemText(IDC_EDIT1, (LPTSTR)szLpAddr, MAXBYTE);
 	m_Socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	WSAEventSelect(m_Socket, GetSafeHwnd(), UM_CLIENT | FD_READ | FD_CONNECT | FD_CLOSE);
+	WSAAsyncSelect(m_Socket, GetSafeHwnd(), UM_CLIENT, FD_READ | FD_CONNECT | FD_CLOSE);
 	sockaddr_in serverAddr;
-	serverAddr.sin_family = AF_INET;
-	inet_pton(PF_INET, szLpAddr, &sAdd);
+	serverAddr.sin_family = PF_INET;
+	inet_pton(PF_INET, "127.0.0.1", (VOID*)& sAdd);
 	serverAddr.sin_addr.S_un.S_addr = sAdd.S_un.S_addr;
 	serverAddr.sin_port = htons(5555);
-	connect(m_Socket, (SOCKADDR*)& serverAddr, sizeof(SOCKADDR));
+	int result = connect(m_Socket, (SOCKADDR*)& serverAddr, sizeof(serverAddr));
 }
 
 void CTrojanClientDlg::InsertMsg()

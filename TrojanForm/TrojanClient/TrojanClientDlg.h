@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#define UM_CLIENT (WM_USER+200)
+#define UM_CLIENT (WM_USER+201)
 #define TEXTMSG 't'
 #define BINARYMSG 'b'
 
@@ -43,11 +43,11 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedButton1();
+	afx_msg void OnBnClickedButton2();
 private:
 	void InsertMsg();
 	VOID DispatchMsg(char* msg);
 	SOCKET m_Socket;
 	CString m_StrMsg;
-public:
-	afx_msg void OnBnClickedButton2();
+	HANDLE m_hServerEvent;
 };
