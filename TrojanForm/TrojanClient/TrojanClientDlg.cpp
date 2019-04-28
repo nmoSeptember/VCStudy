@@ -178,6 +178,8 @@ void CTrojanClientDlg::OnBnClickedButton1()
 		return;
 	}
 
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
 	char szLpAddr[MAXBYTE] = { 0 };
 	struct in_addr sAdd;
 	GetDlgItemText(IDC_EDIT1, (LPTSTR)szLpAddr, MAXBYTE);
@@ -188,7 +190,8 @@ void CTrojanClientDlg::OnBnClickedButton1()
 	inet_pton(PF_INET, "127.0.0.1", (VOID*)& sAdd);
 	serverAddr.sin_addr.S_un.S_addr = sAdd.S_un.S_addr;
 	serverAddr.sin_port = htons(5555);
-	int result = connect(m_Socket, (SOCKADDR*)& serverAddr, sizeof(serverAddr));
+	int result = connect(m_Socket, (SOCKADDR*)& serverAddr, sizeof(SOCKADDR));
+
 }
 
 void CTrojanClientDlg::InsertMsg()

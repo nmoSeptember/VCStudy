@@ -109,7 +109,7 @@ BOOL CTrojanServerDlg::OnInitDialog()
 	}
 	m_ListenSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	//WSAEventSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER | FD_READ | FD_CONNECT | FD_CLOSE);
-	WSAAsyncSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER, FD_ACCEPT);
+	WSAAsyncSelect(m_ListenSock, GetSafeHwnd(), UM_SERVER, FD_ACCEPT | FD_READ | FD_CONNECT | FD_CLOSE);
 
 	struct in_addr sAdd;
 	inet_pton(PF_INET, "127.0.0.1", &sAdd);
@@ -183,16 +183,24 @@ LRESULT CTrojanServerDlg::OnSock(WPARAM wParam, LPARAM lParam)
 	{
 		return -1;
 	}
-	switch (WSAGETSELECTERROR(lParam))
+	switch (WSAGETSELECTEVENT(lParam))
 	{
 	case FD_ACCEPT:
 	{
 		sockaddr_in clientAddr;
 		int nSize = sizeof(SOCKADDR);
 		m_ClientSock = accept(m_ListenSock, (SOCKADDR*)& clientAddr, &nSize);
-		char strAddr[MAXBYTE];
+
+
+		char strAddr[MAXBYTE];		inet_ntop(PF_INET, (SOCKADDR*)& clientAddr, strAddr, MAXBYTE);		wchar_t* pwszUnicode;		int iSize = MultiByteToWideChar(CP_ACP, 0, strAddr, sizeof(strAddr), NULL, 0); //iSize =wcslen(pwsUnicode)+1=6		pwszUnicode = (wchar_t*)malloc(iSize * sizeof(wchar_t)); //²»ÐèÒª pwszUnicode = (wchar_t *)malloc((iSize+1)*sizeof(wchar_t))		MultiByteToWideChar(CP_ACP, 0, strAddr, sizeof(strAddr), pwszUnicode, iSize);		m_StrMsg.Format(L"Request Address:%s:%d", pwszUnicode, ntohs(clientAddr.sin_port));		delete pwszUnicode;
+		/*char strAddr[MAXBYTE];
 		inet_ntop(PF_INET, (SOCKADDR*)& clientAddr, strAddr, MAXBYTE);
-		m_StrMsg.Format(L"Request Address:%s:%d", strAddr, ntohs(clientAddr.sin_port));
+		wchar_t* dbuf;
+		size_t sSize = strlen(strAddr);
+		size_t dSize = (size_t)MultiByteToWideChar(CP_ACP, 0, (const char*)strAddr, (int)sSize, NULL, 0);
+		dbuf = (wchar_t*)malloc(dSize * sizeof(wchar_t));
+		WCHAR tmp = MultiByteToWideChar(CP_ACP, 0, (const char*)strAddr, (int)sSize, dbuf, dSize);
+		m_StrMsg.Format(TEXT("Request Address:%s:%d"), tmp, ntohs(clientAddr.sin_port));*/
 		DATA_MSG dataMsg;
 		dataMsg.bType = TEXTMSG;
 		dataMsg.bClass = 0;
